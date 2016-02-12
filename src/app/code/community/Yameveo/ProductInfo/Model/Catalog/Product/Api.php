@@ -35,7 +35,8 @@ class Yameveo_ProductInfo_Model_Catalog_Product_Api extends Mage_Catalog_Model_P
             'set' => $product->getAttributeSetId(),
             'type' => $product->getTypeId(),
             'categories' => $product->getCategoryIds(),
-            'websites' => $product->getWebsiteIds()
+            'websites' => $product->getWebsiteIds(),
+            'storeView' => $store,
         );
 
         foreach ($product->getTypeInstance(true)->getEditableAttributes($product) as $attribute) {
@@ -45,6 +46,7 @@ class Yameveo_ProductInfo_Model_Catalog_Product_Api extends Mage_Catalog_Model_P
                 );
             }
         }
+        $product->getResource()->getAttribute($attribute['attribute_code'])->getFrontend()->getSelectOptions();
         return $this->infoResult($result, $product, $attributes, $store, $all_attributes);
     }
 
@@ -83,6 +85,16 @@ class Yameveo_ProductInfo_Model_Catalog_Product_Api extends Mage_Catalog_Model_P
                 foreach ($attributesData as $attribute) {
                     $options[$k]['label'] = $attribute['store_label'];
                     $options[$k]['code'] = $attribute['attribute_code'];
+
+
+
+                    $a = $product->getResource()->getAttribute($attribute['attribute_code'])->getFrontend()->getValue($product);
+                    $a = $product->getResource()->getAttribute($attribute['attribute_code'])->getFrontend()->getSelectOptions();
+                    $options[$k]['test'] = $a;
+
+
+
+
                     foreach ($attribute['values'] as $value) {
                         $value['attribute_code'] = $attribute['attribute_code'];
                         $options[$k]['options'][] = $value;
@@ -95,24 +107,28 @@ class Yameveo_ProductInfo_Model_Catalog_Product_Api extends Mage_Catalog_Model_P
                 $childProducts = Mage::getModel('catalog/product_type_configurable')
                     ->getUsedProducts(null, $product);
                 $simple_products = array();
+
                 foreach ($childProducts as $childProduct) {
+                    $childProduct = $this->_getProduct($childProduct->getId(), $store);
+                    $stock_data = Mage::getModel('cataloginventory/stock_item')->loadByProduct($childProduct)->getData();
                     $simple_products[$childProduct->getId()] = array(
-                        'product_id' => $product->getId(),
-                        'sku' => $product->getSku(),
-                        'type' => $product->getTypeId(),
-                        'categories' => $product->getCategoryIds(),
-                        'websites' => $product->getWebsiteIds(),
-                        'name' => $product->getName(),
-                        'description' => $product->getDescription(),
-                        'short_description' => $product->getShortDescription(),
-                        'price' => $product->getPrice()
+                      'product_id' => $childProduct->getId(),
+                      'sku' => $childProduct->getSku(),
+                      'type' => $childProduct->getTypeId(),
+                      'categories' => $childProduct->getCategoryIds(),
+                      'websites' => $childProduct->getWebsiteIds(),
+                      'name' => $childProduct->getName(),
+                      'description' => $childProduct->getDescription(),
+                      'short_description' => $childProduct->getShortDescription(),
+                      'price' => $childProduct->getPrice(),
+                      'stock_data' => $stock_data,
+                      'test' => get_class($childProduct)
                     );
 
                     foreach ($attributesData as $attribute) {
                         $simple_products[$childProduct->getId()]['attributes'][$attribute['attribute_code']] = $childProduct[$attribute['attribute_code']];
                     }
                 }
-                
                 $result['simple_products'] = $simple_products;
             }
         }
