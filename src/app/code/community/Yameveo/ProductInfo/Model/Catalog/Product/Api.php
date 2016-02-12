@@ -94,24 +94,28 @@ class Yameveo_ProductInfo_Model_Catalog_Product_Api extends Mage_Catalog_Model_P
                 // @todo use $childProducts = $product->getTypeInstance()->getUsedProducts();
                 $childProducts = Mage::getModel('catalog/product_type_configurable')
                     ->getUsedProducts(null, $product);
-                $skus = array();
-                $i = 0;
+                $simple_products = array();
                 foreach ($childProducts as $childProduct) {
-                    $skus[$i]['sku'] = $childProduct->getSku();
-                    $j = 0;
+                    $simple_products[$childProduct->getId()] = array(
+                        'product_id' => $product->getId(),
+                        'sku' => $product->getSku(),
+                        'type' => $product->getTypeId(),
+                        'categories' => $product->getCategoryIds(),
+                        'websites' => $product->getWebsiteIds(),
+                        'name' => $product->getName(),
+                        'description' => $product->getDescription(),
+                        'short_description' => $product->getShortDescription(),
+                        'price' => $product->getPrice()
+                    );
+
                     foreach ($attributesData as $attribute) {
-                        $skus[$i]['options'][$j]['label'] = $attribute['label'];
-                        $skus[$i]['options'][$j]['attribute_code'] = $attribute['attribute_code'];
-                        $skus[$i]['options'][$j]['value_index'] = $childProduct[$attribute['attribute_code']];
-                        $j++;
+                        $simple_products[$childProduct->getId()]['attributes'][$attribute['attribute_code']] = $childProduct[$attribute['attribute_code']];
                     }
-                    $i++;
                 }
-                $result['configurable_products_data'] = $skus;
+                
+                $result['simple_products'] = $simple_products;
             }
         }
-
         return $result;
     }
-
 }
